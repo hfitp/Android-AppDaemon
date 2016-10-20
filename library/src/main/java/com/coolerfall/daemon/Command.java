@@ -1,4 +1,4 @@
-package com.cooler.daemon;
+package com.coolerfall.daemon;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -14,16 +14,16 @@ import java.io.InputStream;
  * Some command here.
  *
  * @author Vincent Cheung
- * @since  Jan. 22, 2015
+ * @since Jan. 22, 2015
  */
 public class Command {
 	private static final String TAG = Command.class.getSimpleName();
 
-	public static final String BIN_DIR_NAME = "bin";
-
-	/** copy file to destination */
+	/**
+	 * copy file to destination
+	 */
 	private static void copyFile(File file, InputStream is, String mode)
-			throws IOException, InterruptedException {
+		throws IOException, InterruptedException {
 		final String abspath = file.getAbsolutePath();
 		final FileOutputStream out = new FileOutputStream(file);
 		byte buf[] = new byte[1024];
@@ -39,35 +39,17 @@ public class Command {
 	}
 
 	/**
-	 * copy files in raw into destination file.
-	 *
-	 * @param  context context
-	 * @param  resid   the resource id of file in raw
-	 * @param  file    the file to copy to
-	 * @param  mode    mode of file
-	 *
-	 * @throws java.io.IOException
-	 * @throws InterruptedException
-	 */
-	public static void copyRawFile(Context context, int resid, File file, String mode)
-			throws IOException, InterruptedException {
-		final InputStream is = context.getResources().openRawResource(resid);
-		copyFile(file, is, mode);
-	}
-
-	/**
 	 * copy file in assets into destination file
 	 *
-	 * @param  context        context
-	 * @param  assetsFilename file name in assets
-	 * @param  file           the file to copy to
-	 * @param  mode           mode of file
-	 *
-	 * @throws java.io.IOException
+	 * @param context        context
+	 * @param assetsFilename file name in assets
+	 * @param file           the file to copy to
+	 * @param mode           mode of file
+	 * @throws IOException
 	 * @throws InterruptedException
 	 */
 	public static void copyAssets(Context context, String assetsFilename, File file, String mode)
-			throws IOException, InterruptedException {
+		throws IOException, InterruptedException {
 		AssetManager manager = context.getAssets();
 		final InputStream is = manager.open(assetsFilename);
 		copyFile(file, is, mode);
@@ -76,17 +58,24 @@ public class Command {
 	/**
 	 * Install specified binary into destination directory.
 	 *
-	 * @param  context  context
-	 * @param  destDir  destionation directory
-	 * @param  filename filename of binary
-	 * @return          true if install successfully, otherwise return false
+	 * @param context  context
+	 * @param destDir  destionation directory
+	 * @param filename filename of binary
+	 * @return true if install successfully, otherwise return false
 	 */
 	@SuppressWarnings("deprecation")
 	public static boolean install(Context context, String destDir, String filename) {
+		String binaryDir = "armeabi";
+
 		String abi = Build.CPU_ABI;
-		if (!abi.startsWith("arm")) {
-			return false;
+		if (abi.startsWith("armeabi-v7a")) {
+			binaryDir = "armeabi-v7a";
+		} else if (abi.startsWith("x86")) {
+			binaryDir = "x86";
 		}
+
+		/* for different platform */
+		String assetfilename = binaryDir + File.separator + filename;
 
 		try {
 			File f = new File(context.getDir(destDir, Context.MODE_PRIVATE), filename);
@@ -95,21 +84,11 @@ public class Command {
 				return false;
 			}
 
-			copyAssets(context, filename, f, "0755");
+			copyAssets(context, assetfilename, f, "0755");
 			return true;
 		} catch (Exception e) {
 			Log.e(TAG, "installBinary failed: " + e.getMessage());
 			return false;
 		}
-	}
-
-	/**
-	 * Install specified binary into /data/data/pakage-name/app-bin directory.
-	 *
-	 * @param context  context
-	 * @param filename file name
-	 */
-	public static void install(Context context, String filename) {
-		install(context, BIN_DIR_NAME, filename);
 	}
 }
